@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=yourpassword
+      - DB_NAME=pvz
+    depends_on:
+      - db
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: pvz
+    ports:
+      - "5432:5432"
