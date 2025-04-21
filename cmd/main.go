@@ -5,12 +5,19 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/romangergovskiy/go-pvz/internal/auth"
 	"github.com/romangergovskiy/go-pvz/internal/database"
 	"github.com/romangergovskiy/go-pvz/internal/pvz"
 )
 
 func main() {
+	// Загрузка переменных окружения из .env файла
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Ошибка загрузки .env файла")
+	}
+
 	// Инициализация базы данных
 	db, err := database.InitDB()
 	if err != nil {
@@ -32,5 +39,6 @@ func main() {
 	secured.HandleFunc("/pvz/{id}", pvz.GetPVZ(db)).Methods("GET")
 
 	// Запуск сервера
+	log.Println("Сервер запущен на порту :8000")
 	log.Fatal(http.ListenAndServe(":8000", router))
 }

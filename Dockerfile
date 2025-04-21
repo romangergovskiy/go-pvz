@@ -2,10 +2,16 @@ FROM golang:1.23-alpine
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-COPY . .  
+RUN apk add --no-cache git postgresql-client
 
-RUN go mod tidy 
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
 RUN go build -o main ./cmd
 
-CMD ["./main"]
+COPY wait-for-postgres.sh ./
+RUN chmod +x wait-for-postgres.sh
+
+CMD ["./wait-for-postgres.sh", "./main"]
