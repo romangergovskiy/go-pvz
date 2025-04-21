@@ -1,7 +1,8 @@
 package models
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"-"`
+	ID           int
+	Email        string
+	PasswordHash string // Если ты хранишь захешированный пароль
+	Password     string // Если ты хранишь оригинальный пароль (не рекомендуется)
 }

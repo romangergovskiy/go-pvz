@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/yourproject/internal/database"
+	"github.com/romangergovskiy/go-pvz/internal/database"
 )
 
 func CreatePVZ(db *database.DB) http.HandlerFunc {

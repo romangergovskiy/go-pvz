@@ -1,15 +1,22 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/yourproject/internal/database"
-	"github.com/yourproject/internal/models"
+	"github.com/romangergovskiy/go-pvz/internal/database"
+	"github.com/romangergovskiy/go-pvz/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// Получение секретного ключа из переменной окружения
+func GetSecretKey() string {
+	return os.Getenv("JWT_SECRET_KEY")
+}
 
 // Регистрация пользователя
 func RegisterUser(db *database.DB) http.HandlerFunc {
@@ -28,8 +35,10 @@ func RegisterUser(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		// Сохранение в базу данных
-		err = db.CreateUser(user.Email, string(hashedPassword))
+		// Сохранение в базу данных с контекстом
+		user.Password = string(hashedPassword)  // если нужно, чтобы пароль был хеширован перед сохранением
+		err = db.CreateUser(r.Context(), &user) // передаем контекст и указатель на структуру user
+
 		if err != nil {
 			http.Error(w, "Error saving user", http.StatusInternalServerError)
 			return
@@ -50,8 +59,8 @@ func LoginUser(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		// Проверка существования пользователя
-		storedUser, err := db.GetUserByEmail(user.Email)
+		// Проверка существования пользователя с контекстом
+		storedUser, err := db.GetUserByEmail(context.Background(), user.Email)
 		if err != nil {
 			http.Error(w, "User not found", http.StatusUnauthorized)
 			return
@@ -70,7 +79,11 @@ func LoginUser(db *database.DB) http.HandlerFunc {
 			"email": storedUser.Email,
 		})
 
-		tokenString, err := token.SignedString([]byte("your-secret-key"))
+		// Получение секретного ключа из переменной окружения
+		secretKey := GetSecretKey()
+
+		// Создание подписанного токена
+		tokenString, err := token.SignedString([]byte(secretKey))
 		if err != nil {
 			http.Error(w, "Error creating token", http.StatusInternalServerError)
 			return
@@ -89,11 +102,20 @@ func VerifyToken(next http.Handler) http.Handler {
 			return
 		}
 
+		// Проверка формата токена, должен быть "Bearer <token>"
+		if len(tokenString) < 7 || tokenString[:7] != "Bearer " {
+			http.Error(w, "Invalid token format", http.StatusUnauthorized)
+			return
+		}
+		tokenString = tokenString[7:] // Обрезаем "Bearer "
+
+		// Разбор и проверка токена
+		secretKey := GetSecretKey()
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method")
 			}
-			return []byte("your-secret-key"), nil
+			return []byte(secretKey), nil
 		})
 		if err != nil || !token.Valid {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)

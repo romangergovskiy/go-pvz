@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"go-pvz/internal/auth"
 	"net/http"
+
+	"github.com/romangergovskiy/go-pvz/internal/auth"
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
