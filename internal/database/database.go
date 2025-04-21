@@ -11,42 +11,42 @@ import (
 )
 
 type DB struct {
-	*sql.DB
+	Conn *sql.DB
 }
 
 func InitDB() (*DB, error) {
 	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"),
+		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
 	)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка открытия подключения: %v", err)
+		return nil, err
 	}
+	return &DB{Conn: db}, nil
+}
 
-	err = db.Ping()
-	if err != nil {
-		return nil, fmt.Errorf("ошибка пинга базы данных: %v", err)
-	}
-
-	return &DB{db}, nil
+func (db *DB) Close() {
+	db.Conn.Close()
 }
 
 func (db *DB) CreateUser(ctx context.Context, user *models.User) error {
-	query := `INSERT INTO users (email, password_hash) VALUES ($1, $2)`
-	_, err := db.ExecContext(ctx, query, user.Email, user.PasswordHash)
-	return err
+	query := `INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id`
+	return db.Conn.QueryRowContext(ctx, query, user.Email, user.Password, user.Role).Scan(&user.ID)
 }
 
 func (db *DB) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := `SELECT id, email, password_hash FROM users WHERE email = $1`
-	row := db.QueryRowContext(ctx, query, email)
+	query := `SELECT id, email, password, role FROM users WHERE email = $1`
+	row := db.Conn.QueryRowContext(ctx, query, email)
 
 	var user models.User
-	err := row.Scan(&user.ID, &user.Email, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Email, &user.Password, &user.Role)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка получения пользователя по email: %v", err)
+		return nil, err
 	}
-
 	return &user, nil
 }

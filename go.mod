@@ -7,6 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gorilla/mux v1.8.1
+	github.com/joho/godotenv v1.4.0
 	github.com/lib/pq v1.10.9
 	golang.org/x/crypto v0.37.0
 	google.golang.org/grpc v1.71.1
@@ -14,7 +15,8 @@ require (
 )
 
 require (
-	github.com/joho/godotenv v1.4.0 // indirect
+	github.com/jackc/pgx v3.6.2+incompatible // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect

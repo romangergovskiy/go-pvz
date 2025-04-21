@@ -5,13 +5,27 @@ services:
     image: postgres:13
     container_name: go-pvz-db
     environment:
-      POSTGRES_DB: go_pvz
+      POSTGRES_DB: new_pvz
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123456
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  go-pvz-backend:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 123456
+      DB_NAME: new_pvz
+    command: ["./wait-for-postgres.sh", "db:5432", "--", "./main"]
 
 volumes:
   pgdata:

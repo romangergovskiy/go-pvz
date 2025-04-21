@@ -12,33 +12,29 @@ import (
 )
 
 func main() {
-	// Загрузка переменных окружения из .env файла
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Ошибка загрузки .env файла")
+	if err := godotenv.Load(); err != nil {
+		log.Println("⚠️ .env файл не найден или не загружен, используем переменные окружения по умолчанию")
+	} else {
+		log.Println("✅ .env файл успешно загружен")
 	}
 
-	// Инициализация базы данных
 	db, err := database.InitDB()
 	if err != nil {
-		log.Fatal("Ошибка подключения к базе данных:", err)
+		log.Fatalf("❌ Ошибка подключения к базе данных: %v", err)
 	}
 	defer db.Close()
 
-	// Инициализация маршрутизатора
 	router := mux.NewRouter()
 
-	// Маршруты для регистрации и логина
 	router.HandleFunc("/register", auth.RegisterUser(db)).Methods("POST")
 	router.HandleFunc("/login", auth.LoginUser(db)).Methods("POST")
 
-	// Защищённые маршруты
 	secured := router.PathPrefix("/secured").Subrouter()
 	secured.Use(auth.VerifyToken)
+
 	secured.HandleFunc("/pvz", pvz.CreatePVZ(db)).Methods("POST")
 	secured.HandleFunc("/pvz/{id}", pvz.GetPVZ(db)).Methods("GET")
 
-	// Запуск сервера
-	log.Println("Сервер запущен на порту :8000")
-	log.Fatal(http.ListenAndServe(":8000", router))
+	log.Println("🚀 Сервер запущен на http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
